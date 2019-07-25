@@ -21,6 +21,10 @@ else()
   find_package(Playready3 REQUIRED)
 endif()
 
+if(NOT TARGET Playready::Playready)
+  message(FATAL_ERROR "Playready library not found.")
+endif()
+
 set(DRM_PLUGIN_NAME PlayReady)
 
 add_library(${DRM_PLUGIN_NAME} SHARED 
