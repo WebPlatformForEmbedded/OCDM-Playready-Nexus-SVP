@@ -43,6 +43,8 @@ mark_as_advanced(
 )
 
 if(PC_PLAYREADY4_FOUND)
+    set(Playready_FOUND TRUE)
+    
     list(GET ${PC_PLAYREADY4_LIBRARIES} 0 PLAYREADY4_LIBRARY)
 
     if(NOT TARGET Playready::Playready)

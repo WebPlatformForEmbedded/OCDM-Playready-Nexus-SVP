@@ -63,7 +63,7 @@ set(PLAYREADY_COMPILE_DEFINITIONS
 )
 
 if(EXISTS "${PLAYREADY_LIBRARY}")
-    set(PLAYREADY_FOUND TRUE)
+    set(Playready_FOUND TRUE)
 
     if(NOT TARGET Playready::Playready)
         add_library(Playready::Playready UNKNOWN IMPORTED)
