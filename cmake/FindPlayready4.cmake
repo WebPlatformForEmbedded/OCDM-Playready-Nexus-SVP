@@ -27,7 +27,7 @@
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 find_package(PkgConfig REQUIRED)
-include(FindPackageHandleStandardArgs
+include(FindPackageHandleStandardArgs)
 
 pkg_search_module(PC_PLAYREADY4 playready4 REQUIRED)
 
