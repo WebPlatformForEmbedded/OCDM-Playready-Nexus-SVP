@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Metrological
+ * Copyright 2017-2018 Metrological
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,21 @@
 
 #pragma once
 
-#include <iostream>
-#include <mutex>
+#include "cdmi.h"
+#include <core/core.h>
 
-#include <cdmi.h>
+#include <refsw/nexus_config.h>
+#include <refsw/nxclient.h>
+#include <refsw/nexus_platform.h>
+#include <refsw/nexus_memory.h>
+#include <refsw/bstd.h>           /* brcm includes */
+#include <refsw/bkni.h>
 
-#include <nexus_config.h>
-#include <nxclient.h>
-#include <nexus_platform.h>
-#include <nexus_memory.h>
-
-#include <bstd.h>           /* brcm includes */
-#include <bkni.h>
-
-#include <oemcommon.h>
-#include <drmmanager.h>
-#include <drmmathsafe.h>
-#include <drmtypes.h>
-#include <drmerr.h>
+#include <refsw/oemcommon.h>
+#include <refsw/drmmanager.h>
+#include <refsw/drmmathsafe.h>
+#include <refsw/drmtypes.h>
+#include <refsw/drmerr.h>
 
 namespace CDMi {
 
@@ -130,7 +127,8 @@ private:
     DRM_BOOL m_fCommit;
     DRM_VOID *m_pOEMContext;
 
-    std::mutex _decoderLock;
+    WPEFramework::Core::CriticalSection _decoderLock;
+
 };
 
 } // namespace CDMi

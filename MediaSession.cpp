@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Metrological
+ * Copyright 2017-2018 Metrological
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,33 +16,38 @@
 
 #include "MediaSession.h"
 #include <assert.h>
-#include <cstring>
-#include <sys/time.h>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <string.h>
+#include <vector>
+#include <sys/utsname.h>
 
-#include <nexus_random_number.h>
+#include <refsw/nexus_random_number.h>
 
-#include <drmnamespace.h>
-#include <drmbytemanip.h>
-#include <drmmanager.h>
-#include <drmbase64.h>
-#include <drmsoapxmlutility.h>
-#include <oemcommon.h>
-#include <drmconstants.h>
-#include <drmsecuretime.h>
-#include <drmsecuretimeconstants.h>
-#include <drmrevocation.h>
-#include <drmxmlparser.h>
-#include <drmmathsafe.h>
-#include <prdy_http.h>
-#include <drm_data.h>
+#include <refsw/drmbuild_oem.h>
+#include <refsw/drmnamespace.h>
+#include <refsw/drmbytemanip.h>
+#include <refsw/drmmanager.h>
+#include <refsw/drmbase64.h>
+#include <refsw/drmsoapxmlutility.h>
+#include <refsw/oemcommon.h>
+#include <refsw/drmconstants.h>
+#include <refsw/drmsecuretime.h>
+#include <refsw/drmsecuretimeconstants.h>
+#include <refsw/drmrevocation.h>
+#include <refsw/drmxmlparser.h>
+#include <refsw/drmmathsafe.h>
+#include <refsw/prdy_http.h>
+#include <refsw/drm_data.h>
 
 #define NYI_KEYSYSTEM "keysystem-placeholder"
 
 // ~100 KB to start * 64 (2^6) ~= 6.4 MB, don't allocate more than ~6.4 MB
 #define DRM_MAXIMUM_APPCONTEXT_OPAQUE_BUFFER_SIZE ( 64 * MINIMUM_APPCONTEXT_OPAQUE_BUFFER_SIZE )
 
-#ifdef CMD_DRM_PLAYREADY_SAGE_IMPL
-#include <b_secbuf.h>
+#ifdef NEXUS_PLAYREADY_SVP_ENABLE
+#include <refsw/b_secbuf.h>
 
 struct Rpc_Secbuf_Info {
     uint32_t type;
@@ -361,7 +366,8 @@ MediaKeySession::MediaKeySession(const uint8_t *f_pbInitData, uint32_t f_cbInitD
         , m_piCallback(nullptr)
         , m_eKeyState(KEY_CLOSED)
         , m_fCommit(false)
-        , m_pOEMContext(f_pOEMContext) {
+        , m_pOEMContext(f_pOEMContext)
+        , _decoderLock() {
 
     DRM_RESULT dr = DRM_SUCCESS;
     DRM_ID oSessionID;
@@ -369,6 +375,7 @@ MediaKeySession::MediaKeySession(const uint8_t *f_pbInitData, uint32_t f_cbInitD
     DRM_WCHAR          rgwchHDSPath[ DRM_MAX_PATH ];
     DRM_CONST_STRING   dstrHDSPath = DRM_EMPTY_DRM_STRING;
     NEXUS_ClientConfiguration platformConfig;
+    OEM_Settings         oemSettings;
     std::string playreadyInitData;
     DRM_WCHAR           *hdsDir = bdrm_get_hds_dir();
     DRM_WCHAR           *hdsFname = bdrm_get_pr3x_hds_fname();
@@ -462,8 +469,8 @@ MediaKeySession::MediaKeySession(const uint8_t *f_pbInitData, uint32_t f_cbInitD
     else
     {
         if (dr != 0) {
-            printf("%d Expect platform to support Secure Clock or Anti-Rollback Clock. Possible certificate error: 0x%jX\n",
-                   __LINE__, static_cast<uintmax_t>(dr));
+            printf("%d Expect platform to support Secure Clock or Anti-Rollback Clock.  Possible certificate error.%u:%d\n",
+                   __LINE__, dr, dr);
             goto ErrorExit;
         }
     }
@@ -774,7 +781,7 @@ CDMi_RESULT MediaKeySession::Decrypt(
     DRM_DWORD cbData = 0;
     NEXUS_Error rc = NEXUS_SUCCESS;
 
-#ifdef CMD_DRM_PLAYREADY_SAGE_IMPL
+#if NEXUS_PLAYREADY_SVP_ENABLE
     DRM_BYTE *desc = nullptr;
     Rpc_Secbuf_Info *pRPCsecureBufferInfo;
     B_Secbuf_Info   secureBufferInfo;
@@ -792,10 +799,7 @@ CDMi_RESULT MediaKeySession::Decrypt(
         oAESContext.qwInitializationVector += f_pbIV[i];
     }
 
-ErrorExit:
-    return CDMi_S_FALSE;
-
-#ifdef CMD_DRM_PLAYREADY_SAGE_IMPL
+#if NEXUS_PLAYREADY_SVP_ENABLE
 
     void *pOpaqueData, *pOpaqueDataEnc;
 
@@ -821,7 +825,7 @@ ErrorExit:
     // copy all samples data including clear one too
     B_Secbuf_ImportData(pOpaqueData, 0, (unsigned char*)pOpaqueDataEnc, pRPCsecureBufferInfo->size, 1);
 
-     std::lock_guard<std::mutex> guard(_decoderLock);
+     _decoderLock.Lock();
      if (Drm_Reader_DecryptOpaque(
             &m_oDecryptContext,
             pRPCsecureBufferInfo->subsamples_count,
@@ -849,6 +853,7 @@ ErrorExit:
             *f_pcbOpaqueClearContent = 0;
             *f_ppbOpaqueClearContent = nullptr;
 
+            _decoderLock.Unlock();
             return CDMi_SUCCESS;
     }
     else {
@@ -858,12 +863,16 @@ ErrorExit:
         B_Secbuf_FreeDesc(pOpaqueData);
         // Encrypted data does not need anymore, freeing
         B_Secbuf_Free(pOpaqueDataEnc);
+        _decoderLock.Unlock();
         return CDMi_S_FALSE;
     }
+
 #else
-    printf("%s\n", "Playready support of None-SVP is not implemented yet!");
-    return CDMi_S_FALSE;
+	printf("Playready 3.0 support of None-SVP, not implemented yet!\n");
 #endif
+
+ErrorExit:
+    return CDMi_S_FALSE;
 }
 
 CDMi_RESULT MediaKeySession::ReleaseClearContent(
@@ -995,7 +1004,7 @@ int MediaKeySession::InitSecureClock(DRM_APP_CONTEXT *pDrmAppCtx)
 
     /* NOW testing the system time */
 
-ErrorExit:
+    ErrorExit:
 
     ChkVOID( SAFE_OEM_FREE( pbChallenge ) );
 

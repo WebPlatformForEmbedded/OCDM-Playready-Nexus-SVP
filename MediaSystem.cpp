@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Metrological
+ * Copyright 2017-2018 Metrological
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include "cdmi.h"
 #include "MediaSession.h"
 
 namespace CDMi {
@@ -24,14 +25,14 @@ private:
     PlayReady& operator= (const PlayReady&) = delete;
 
 public:
-    PlayReady()
-      : m_drmOemContext(nullptr) {
+    PlayReady() {
 
         NxClient_JoinSettings joinSettings;
         NEXUS_Error rc;
         NEXUS_ClientConfiguration platformConfig;
+        OEM_Settings         oemSettings;
         NEXUS_MemoryAllocationSettings heapSettings;
-        DRM_RESULT dr = DRM_S_FALSE;
+        DRM_RESULT dr = DRM_SUCCESS;
 
         NxClient_GetDefaultJoinSettings(&joinSettings);
         snprintf(joinSettings.name, NXCLIENT_MAX_NAME, "playready3x");
@@ -55,8 +56,6 @@ public:
             }
         }
 
-#ifndef PLAYREADY_SAGE
-        OEM_Settings oemSettings;
         BKNI_Memset(&oemSettings, 0, sizeof(OEM_Settings));
         oemSettings.heap = heapSettings.heap;
 
@@ -65,17 +64,17 @@ public:
 
         m_drmOemContext = oemSettings.f_pOEMContext;
         ChkMem(m_drmOemContext);
-#endif
+
 ErrorExit:
-        if (DRM_FAILED(dr)) {
+        if (DRM_FAILED(dr))
+        {
             printf("Playready Initialize failed\n");
         }
     }
 
     ~PlayReady(void) {
-        if (m_drmOemContext) {
-            Drm_Platform_Uninitialize(m_drmOemContext);
-        }
+
+        Drm_Platform_Uninitialize(m_drmOemContext);
     }
 
     CDMi_RESULT CreateMediaKeySession(
