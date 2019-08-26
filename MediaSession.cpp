@@ -744,6 +744,8 @@ ErrorExit:
         printf("Key processed, now ready for content decryption\n");
         m_eKeyState = KEY_READY;
     }
+
+    m_piCallback->OnKeyStatusesUpdated();
     return;
 }
 
