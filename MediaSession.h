@@ -149,7 +149,6 @@ public:
     virtual CDMi_RESULT SelectKeyId(const uint8_t keyLength, const uint8_t keyId[]) override;
     virtual CDMi_RESULT CleanDecryptContext() override;
 
-    void UninitializeContext();
 private:
 
     bool LoadRevocationList(const char *revListFile);

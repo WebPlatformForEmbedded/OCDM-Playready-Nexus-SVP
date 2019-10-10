@@ -551,42 +551,9 @@ ErrorExit:
 }
 
 MediaKeySession::~MediaKeySession(void)
-{     
-    m_eKeyState = KEY_CLOSED;  
-    
-    if (m_oDecryptContext) {
-        LOGGER(LINFO_, "PlayReady Session Destructed");
-        Drm_Reader_Close(m_oDecryptContext);
-        delete m_oDecryptContext;
-        m_oDecryptContext = nullptr;
-    }
-
-    DRM_RESULT dr = Drm_StoreMgmt_DeleteInMemoryLicenses(m_poAppContext, &mBatchId);
-    // Since there are multiple licenses in a batch, we might have already cleared
-    // them all. Ignore DRM_E_NOMORE returned from Drm_StoreMgmt_DeleteInMemoryLicenses.
-    if (DRM_FAILED(dr) && (dr != DRM_E_NOMORE)) {
-        LOGGER(LERROR_, "Error in Drm_StoreMgmt_DeleteInMemoryLicenses 0x%08lX", dr);
-    }
-    SAFE_OEM_FREE(m_pbOpaqueBuffer);
-    m_cbOpaqueBuffer = 0;
-    
-    SAFE_OEM_FREE(m_pbRevocationBuffer);
-    
-    m_piCallback = nullptr;
-    m_fCommit = FALSE;
-    m_decryptInited = false;
-
+{
+    Close();
     LOGGER(LINFO_, "PlayReady Session Destructed");
-}
-
-
-void MediaKeySession::UninitializeContext() {
-    if (m_poAppContext) {
-        LOGGER(LINFO_, "PlayReady Session Uninitialize");
-        Drm_Uninitialize(m_poAppContext);
-    }
-    
-    SAFE_OEM_FREE(m_poAppContext);
 }
 
 
@@ -793,8 +760,48 @@ CDMi_RESULT MediaKeySession::Remove(void)
 
 CDMi_RESULT MediaKeySession::Close(void)
 {
-    return CDMi_S_FALSE;
+    m_eKeyState = KEY_CLOSED;
+
+    if (m_pbRevocationBuffer != nullptr) {
+        SAFE_OEM_FREE(m_pbRevocationBuffer);
+        m_pbRevocationBuffer = nullptr;
+    }
+
+    if (m_poAppContext !=  nullptr) {
+        DRM_RESULT dr = Drm_StoreMgmt_DeleteInMemoryLicenses(m_poAppContext, &mBatchId);
+        // Since there are multiple licenses in a batch, we might have already cleared
+        // them all. Ignore DRM_E_NOMORE returned from Drm_StoreMgmt_DeleteInMemoryLicenses.
+        if (DRM_FAILED(dr) && (dr != DRM_E_NOMORE)) {
+            LOGGER(LERROR_, "Error in Drm_StoreMgmt_DeleteInMemoryLicenses 0x%08lX", dr);
+        }
+
+        LOGGER(LINFO_, "PlayReady Session Uninitialize");
+        Drm_Uninitialize(m_poAppContext);
+
+        SAFE_OEM_FREE(m_poAppContext);
+        m_poAppContext = nullptr;
+    }
+
+    if (m_pbOpaqueBuffer != nullptr) {
+        SAFE_OEM_FREE(m_pbOpaqueBuffer);
+        m_cbOpaqueBuffer = nullptr;
+    }
+
+
+    if (m_oDecryptContext != nullptr) {
+        LOGGER(LINFO_, "PlayReady Session Destructed");
+        Drm_Reader_Close(m_oDecryptContext);
+        delete m_oDecryptContext;
+        m_oDecryptContext = nullptr;
+    }
+
+    m_piCallback = nullptr;
+    m_fCommit = FALSE;
+    m_decryptInited = false;
+
+    return CDMi_SUCCESS;
 }
+
 CDMi_RESULT MediaKeySession::Decrypt(
         const uint8_t *f_pbSessionKey,
         uint32_t f_cbSessionKey,
