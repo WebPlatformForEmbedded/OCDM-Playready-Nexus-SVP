@@ -116,6 +116,7 @@ public:
     }
 
     ~PlayReady(void) {
+        ASSERT(m_poAppContext.get() == nullptr);
         NxClient_Free(&m_nxAllocResults);
         NxClient_Uninit();
     }
@@ -628,10 +629,6 @@ public:
         DRM_DWORD dwEncryptionMode  = OEM_TEE_DECRYPTION_MODE_NOT_SECURE;
 
         LOGGER(LINFO_, "Creating System Ext, Build: %s", __TIMESTAMP__ );
-                
-        if (m_poAppContext.get() != nullptr) {
-           m_poAppContext.reset();
-        }
 
         m_poAppContext.reset(new DRM_APP_CONTEXT);
         memset(m_poAppContext.get(), 0, sizeof(DRM_APP_CONTEXT));
@@ -815,7 +812,7 @@ private:
     DRM_DWORD m_cbOpaqueBuffer;
 
     DRM_BYTE *m_pbRevocationBuffer ;
-    std::shared_ptr<DRM_APP_CONTEXT> m_poAppContext;
+    std::unique_ptr<DRM_APP_CONTEXT> m_poAppContext;
 
     string m_readDir;
     string m_storeLocation;

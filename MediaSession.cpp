@@ -402,8 +402,7 @@ DRM_RESULT MediaKeySession::PolicyCallback(
 
     ChkArg((f_pbInitData == nullptr) == (f_cbInitData == 0));
 
-    if (initiateChallengeGeneration != false)
-    {
+    if (initiateChallengeGeneration != false) {
         if (f_pbInitData != nullptr)
         {
             std::string initData(reinterpret_cast<const char *>(f_pbInitData), f_cbInitData);
@@ -762,31 +761,32 @@ CDMi_RESULT MediaKeySession::Close(void)
 {
     m_eKeyState = KEY_CLOSED;
 
-    if (m_pbRevocationBuffer != nullptr) {
-        SAFE_OEM_FREE(m_pbRevocationBuffer);
-        m_pbRevocationBuffer = nullptr;
-    }
-
-    if (m_poAppContext !=  nullptr) {
-        DRM_RESULT dr = Drm_StoreMgmt_DeleteInMemoryLicenses(m_poAppContext, &mBatchId);
-        // Since there are multiple licenses in a batch, we might have already cleared
-        // them all. Ignore DRM_E_NOMORE returned from Drm_StoreMgmt_DeleteInMemoryLicenses.
-        if (DRM_FAILED(dr) && (dr != DRM_E_NOMORE)) {
-            LOGGER(LERROR_, "Error in Drm_StoreMgmt_DeleteInMemoryLicenses 0x%08lX", dr);
+    if (mInitiateChallengeGeneration == true) {
+        if (m_pbRevocationBuffer != nullptr) {
+            SAFE_OEM_FREE(m_pbRevocationBuffer);
+            m_pbRevocationBuffer = nullptr;
         }
 
-        LOGGER(LINFO_, "PlayReady Session Uninitialize");
-        Drm_Uninitialize(m_poAppContext);
+        if (m_poAppContext !=  nullptr) {
+            DRM_RESULT dr = Drm_StoreMgmt_DeleteInMemoryLicenses(m_poAppContext, &mBatchId);
+            // Since there are multiple licenses in a batch, we might have already cleared
+            // them all. Ignore DRM_E_NOMORE returned from Drm_StoreMgmt_DeleteInMemoryLicenses.
+            if (DRM_FAILED(dr) && (dr != DRM_E_NOMORE)) {
+                LOGGER(LERROR_, "Error in Drm_StoreMgmt_DeleteInMemoryLicenses 0x%08lX", dr);
+            }
 
-        SAFE_OEM_FREE(m_poAppContext);
-        m_poAppContext = nullptr;
+            LOGGER(LINFO_, "PlayReady Session Uninitialize");
+            Drm_Uninitialize(m_poAppContext);
+
+            SAFE_OEM_FREE(m_poAppContext);
+            m_poAppContext = nullptr;
+        }
+
+        if (m_pbOpaqueBuffer != nullptr) {
+            SAFE_OEM_FREE(m_pbOpaqueBuffer);
+            m_cbOpaqueBuffer = nullptr;
+        }
     }
-
-    if (m_pbOpaqueBuffer != nullptr) {
-        SAFE_OEM_FREE(m_pbOpaqueBuffer);
-        m_cbOpaqueBuffer = nullptr;
-    }
-
 
     if (m_oDecryptContext != nullptr) {
         LOGGER(LINFO_, "PlayReady Session Destructed");
