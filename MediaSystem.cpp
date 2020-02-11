@@ -602,11 +602,11 @@ public:
     ErrorExit:
         SAFE_OEM_FREE(pbChallenge);
 
-        if (pTimeChallengeURL == nullptr) {
+        if (pTimeChallengeURL != nullptr) {
             NEXUS_Memory_Free(pTimeChallengeURL);
         }
 
-        if (pbResponse == nullptr) {
+        if (pbResponse != nullptr) {
             NEXUS_Memory_Free(pbResponse);
         }
 
