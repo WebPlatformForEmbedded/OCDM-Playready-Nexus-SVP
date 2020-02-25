@@ -179,6 +179,16 @@ CDMi_RESULT MediaKeySession::StoreLicenseData(const uint8_t licenseData[], uint3
             (DRM_DWORD)licenseDataSize,
             &drmLicenseResponse);
 
+    if((m_piCallback != nullptr) && DRM_SUCCEEDED(err)) {
+        for (uint8_t i = 0; i < drmLicenseResponse.m_cAcks; ++i) {
+            if (DRM_SUCCEEDED(drmLicenseResponse.m_rgoAcks[i].m_dwResult)) {
+                ToggleKeyIdFormat(DRM_ID_SIZE, drmLicenseResponse.m_rgoAcks[i].m_oKID.rgb);
+                m_piCallback->OnKeyStatusUpdate("KeyUsable", drmLicenseResponse.m_rgoAcks[i].m_oKID.rgb, DRM_ID_SIZE);
+            }
+        }
+        m_piCallback->OnKeyStatusesUpdated();
+    }
+
     // First, check the return code of Drm_LicenseAcq_ProcessResponse()
     if (err ==  DRM_E_LICACQ_TOO_MANY_LICENSES) {
         // This means the server response contained more licenses than
