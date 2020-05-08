@@ -29,6 +29,9 @@ find_package(NEXUS REQUIRED)
 find_package(NXCLIENT REQUIRED)
 find_package(NexusPlayready REQUIRED)
 
+string(REPLACE "-Wl,--as-needed" "" CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS}")
+set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--no-as-needed")
+
 add_library(${DRM_PLUGIN_NAME} SHARED 
     MediaSession.cpp
     MediaSystem.cpp
