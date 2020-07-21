@@ -383,6 +383,7 @@ DRM_RESULT MediaKeySession::PolicyCallback(
         , m_pbOpaqueBuffer(nullptr)
         , m_cbOpaqueBuffer(0)
         , m_pbRevocationBuffer(nullptr)
+        , m_TokenHandle(nullptr)
         , m_customData(reinterpret_cast<const char*>(f_pbCDMData), f_cbCDMData)
         , m_piCallback(nullptr)
         , m_eKeyState(KEY_CLOSED)
@@ -726,7 +727,6 @@ CDMi_RESULT MediaKeySession::Decrypt(
     DRM_AES_COUNTER_MODE_CONTEXT oAESContext = {0, 0, 0};
     void *pOpaqueData = nullptr;
     NEXUS_MemoryBlockHandle pNexusMemoryBlock = nullptr;
-    NEXUS_MemoryBlockTokenHandle token = nullptr;
     static NEXUS_HeapHandle secureHeap = NEXUS_Heap_Lookup(NEXUS_HeapLookupType_eCompressedRegion);
 
     {
@@ -798,8 +798,8 @@ CDMi_RESULT MediaKeySession::Decrypt(
         goto ErrorExit;
     }
 
-    token = NEXUS_MemoryBlock_CreateToken(pNexusMemoryBlock);
-    if (!token) {
+    m_TokenHandle = NEXUS_MemoryBlock_CreateToken(pNexusMemoryBlock);
+    if (!m_TokenHandle) {
 
         LOGGER(LERROR_, "Could not create a token for another process");
         goto ErrorExit;
@@ -825,8 +825,8 @@ CDMi_RESULT MediaKeySession::Decrypt(
     cr = CDMi_SUCCESS;
 
     // Return clear content.
-    *f_pcbOpaqueClearContent = sizeof(token);
-    *f_ppbOpaqueClearContent = reinterpret_cast<uint8_t*>(&token);
+    *f_pcbOpaqueClearContent = sizeof(m_TokenHandle);
+    *f_ppbOpaqueClearContent = reinterpret_cast<uint8_t*>(&m_TokenHandle);
 
     NEXUS_MemoryBlock_Unlock(pNexusMemoryBlock);
     NEXUS_MemoryBlock_Free(pNexusMemoryBlock);
