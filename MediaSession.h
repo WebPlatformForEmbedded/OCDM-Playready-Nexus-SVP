@@ -195,6 +195,8 @@ private:
 
     DRM_BYTE *m_pbRevocationBuffer;
 
+    NEXUS_MemoryBlockTokenHandle m_TokenHandle;
+
     std::string m_customData;
 
     IMediaKeySessionCallback *m_piCallback;
