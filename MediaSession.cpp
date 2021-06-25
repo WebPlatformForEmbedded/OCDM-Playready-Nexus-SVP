@@ -708,7 +708,7 @@ CDMi_RESULT MediaKeySession::Decrypt(
         uint32_t f_cdwSubSampleMapping,
         const uint8_t *f_pbIV,
         uint32_t f_cbIV,
-        const uint8_t *payloadData,
+        uint8_t *payloadData,
         uint32_t payloadDataSize,
         uint32_t *f_pcbOpaqueClearContent,
         uint8_t **f_ppbOpaqueClearContent,
@@ -824,9 +824,10 @@ CDMi_RESULT MediaKeySession::Decrypt(
 
     cr = CDMi_SUCCESS;
 
-    // Return clear content.
+     //Copy and Return the Memory token in the incoming payload buffer.
     *f_pcbOpaqueClearContent = sizeof(m_TokenHandle);
-    *f_ppbOpaqueClearContent = reinterpret_cast<uint8_t*>(&m_TokenHandle);
+    *f_ppbOpaqueClearContent = payloadData;
+    memcpy(*f_ppbOpaqueClearContent,reinterpret_cast<uint8_t*>(&m_TokenHandle),sizeof(m_TokenHandle));
 
     NEXUS_MemoryBlock_Unlock(pNexusMemoryBlock);
     NEXUS_MemoryBlock_Free(pNexusMemoryBlock);
