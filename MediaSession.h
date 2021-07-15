@@ -18,7 +18,8 @@
 
 #include "Module.h"
 
-#include "cdmi.h"
+#include <interfaces/IDRM.h>
+
 #include <vector>
 
 #include <nexus_config.h>
