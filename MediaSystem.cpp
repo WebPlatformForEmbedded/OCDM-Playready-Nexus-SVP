@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
+#include "Module.h"
+
 #include "cdmi.h"
 #include "MediaSession.h"
 
-#include <core/core.h>
 #include <cryptalgo/cryptalgo.h>
 #include <plugins/plugins.h>
 

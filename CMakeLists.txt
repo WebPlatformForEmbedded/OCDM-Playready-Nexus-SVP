@@ -33,6 +33,7 @@ string(REPLACE "-Wl,--as-needed" "" CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LI
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--no-as-needed")
 
 add_library(${DRM_PLUGIN_NAME} SHARED 
+    Module.cpp
     MediaSession.cpp
     MediaSystem.cpp
     MediaSessionExt.cpp

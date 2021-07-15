@@ -16,8 +16,9 @@
 
 #pragma once
 
+#include "Module.h"
+
 #include "cdmi.h"
-#include <core/core.h>
 #include <vector>
 
 #include <nexus_config.h>
