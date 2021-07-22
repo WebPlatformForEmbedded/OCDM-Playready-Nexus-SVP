@@ -16,9 +16,9 @@
 
 #include "Module.h"
 
-#include "cdmi.h"
 #include "MediaSession.h"
 
+#include <interfaces/IDRM.h>
 #include <cryptalgo/cryptalgo.h>
 #include <plugins/plugins.h>
 
